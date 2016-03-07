@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="jquery.js"></script>
+    <script src="sha1.js"></script>
+    <script src="fat12.js"></script>
+    <link rel="stylesheet" type="text/css" href="fat12.css">
+    <style>
+      #download-image {
+        text-align: center;
+        margin: 50px;
+      }
+
+      #download-image a {
+        background: gray;
+        border: 5px groove gray;
+        font-size: 200%;
+        padding: 20px;
+        color: #800;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Manual Analysis of the FAT12 File System</h1>
+    </header>
+
+    <div id="contents">
+    <section>
+      <section id="toc">
+        <h2>Table of Contents</h2>
+        <ul></ul>
+      </section>
+
+      <section class="toc-elt">
+        <h2>Introduction</h2>
+        <div id="download-image">
+          <a href="fat12.img">Download this</a>
+        </div>
+
+        <p>In this lab, we are going to analyze how a file system stores its data on disk. Modern file systems
+        are relatively complicated, so we are going to look at how the old file system "FAT12" was used to
+        store files on floppy disks. FAT12 is the predecessor of FAT16 and FAT32 (which is still widely used
+        on USB sticks).</p>
+        <p>This document does not contain the full specification of FAT12. For a more detailed description of
+          the various structures that are used throughout this filesystem, take a look at the following resources:
+        </p>
+        <ul>
+          <li><a href="http://www.maverick-os.dk/FileSystemFormats/FAT12_FileSystem.html">http://www.maverick-os.dk/FileSystemFormats/FAT12_FileSystem.html</a></li>
+          <li><a href="http://www.ntfs.com/fat-systems.htm">http://www.ntfs.com/fat-systems.htm</a></li>
+          <li><a href="http://en.wikipedia.org/wiki/File_Allocation_Table">http://en.wikipedia.org/wiki/File_Allocation_Table</a></li>
+        </ul>
+        <p>The file fat12.img contains the raw contents of a floppy disk. To view the contents of this file, open
+          it in a hex editor. You can use the free hex editor xvi32, which is also available on the Programs
+          disk (P:). Students with their own laptops can download xvi32, or can download an alternative such
+          as <a href="http://www.softcircuits.com/cygnus/fe/">Cygnus</a>, <a href="http://www.microsoft.com/visualstudio/3">Visual Studio</a>,
+          <a href="http://ridiculousfish.com/hexfiend/4">Hex Fiend</a>, or <a href="http://www.suavetech.com/0xed/0xed.html">0xed</a>.
+        </p>
+        <p>
+          Take a few moments to get used to your hex editor. In particular, notice that the values of the bytes
+          (in hexadecimal notation) are show in the left column, and the corresponding ASCII value in the
+          right column. The number that precedes the rows is the start offset of the first byte in the row.
+        </p>
+      </section>
+
+      <section class="toc-elt">
+        <h2>Overview</h2>
+        <p>
+          A disk can be divided into multiple partitioned, with each partition having its own file system.
+          For this course, we will ignore this possibility and just assume a disk contains one single partition
+          which uses the FAT12 file system.
+        </p>
+        <p>
+          The disk is structured as follows:
+        </p>
+        <img class="center" src="disk-overview.png" width="50%"></img>
+        <p>
+          We give a short description of each part:
+        </p>
+        <ul>
+          <li>
+            When given a partition, we cannot assume anything about its contents (e.g. which file system
+            it contains). The boot sector provides this basic information. It also contains
+            the instructions necessary to launch the operating system.
+          </li>
+          <li>
+            A single FAT (File Allocation Table) describes how the data making up directories and files
+            is located on the disk. Without this information, one cannot know where
+            to look for files. Since this information is so crucial,
+            a disk can contain multiple copies of the FAT.
+          </li>
+          <li>
+            The root directory contains information about top level files and directories
+            (e.g. under Windows it would describe C:\ or D:\, etc.).
+          </li>
+          <li>
+            The data clusters contain information about all subdirectories and files in these subdirectories.
+          </li>
+      </section>
+
+      <section class="toc-elt">
+        <h2>The Boot Sector</h2>
+        <p>Like any other partition, the first sector of a FAT12 volume is a special sector: the boot sector. It
+          contains information about the partition. The
+          boot sector (the first 512 bytes of the partition) is marked in yellow. The information stored in this
+          sector is defined in the table below. Fill in the bytes values where asked.
+        </p>
+        <table class="reference" id="boot-sector">
+          <tr>
+            <th>Offset</th>
+            <th>Length in bytes</th>
+            <th>Description</th>
+            <th width="200px">Bytes</th>
+          </tr>
+          <tr>
+            <td><span class="hex">0x00</span></td>
+            <td>3</td>
+            <td>Instruction(s) to jump to the bootstrap code</td>
+            <td><%= bytes('EB', '3C', '90') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x03</span></td>
+            <td>8</td>
+            <td>Name of the formatting OS</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0B</span></td>
+            <td>2</td>
+            <td>Bytes per sector</td>
+            <td><%= bytes('00', '02') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0D</span></td>
+            <td>1</td>
+            <td>Sectors per cluster</td>
+            <td><%= bytes('01') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0E</span></td>
+            <td>2</td>
+            <td>Reserved sectors from the start of the volume</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x10</span></td>
+            <td>1</td>
+            <td>Number of FAT copies</td>
+            <td><%= bytes('02') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x11</span></td>
+            <td>2</td>
+            <td>Number of possible root entries</td>
+            <td><%= bytes('E0', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x13</span></td>
+            <td>2</td>
+            <td>Small number of sectors</td>
+            <td><%= bytes('40', '0B') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x15</span></td>
+            <td>1</td>
+            <td>Media descriptor</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x16</span></td>
+            <td>2</td>
+            <td>Sectors per FAT</td>
+            <td><%= bytes('09', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x18</span></td>
+            <td>2</td>
+            <td>Sectors per track</td>
+            <td><%= bytes('12', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x1A</span></td>
+            <td>2</td>
+            <td>Number of heads</td>
+            <td><%= bytes('02', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x1C</span></td>
+            <td>4</td>
+            <td>Hidden sectors</td>
+            <td><%= bytes('00', '00', '00', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x20</span></td>
+            <td>4</td>
+            <td>Large number of sectors (used when volume size exceeds 32MB)</td>
+            <td><%= bytes('00', '00', '00', '00') %></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x24</span></td>
+            <td>1</td>
+            <td>Drive number</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x25</span></td>
+            <td>1</td>
+            <td>Reserved</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x26</span></td>
+            <td>1</td>
+            <td>Extended boot signature (indicates that the next three fields are available)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x27</span></td>
+            <td>4</td>
+            <td>Volume serial number</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x2B</span></td>
+            <td>11</td>
+            <td>Volume label (should be the same as in the root directory)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x36</span></td>
+            <td>8</td>
+            <td>File system type (should be FAT12)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x3E</span></td>
+            <td>448</td>
+            <td>Bootstrap code</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x1FE</span></td>
+            <td>2</td>
+            <td>Boot sector signature (should be <span class="hex">0xAA55</span>)</td>
+            <td></td>
+          </tr>
+        </table>
+        <p>
+          Use this table to verify the following properties:
+        </p>
+        <ul>
+          <li>The name of the OS is "<code>MSDOS5.0</code>".</li>
+          <li>
+            The number of bytes per sector is 512 (or <span class="hex">0x200</span> in hexadecimal).
+            See the note below.
+          </li>
+          <li>There is one reserved sector at the beginning of the partition.</li>
+          <li>
+            There is only 1 sector per cluster. This means that for the purpose of this lab,
+            a cluster is the same as a sector.
+          </li>
+          <li>The size of the disk is 1.44MB. (Note that one sector is 512 bytes.)</li>
+          <li>The file system is indeed "<code>FAT12</code>".</li>
+        </ul>
+        <div class="boxed" data-category="Important">
+          <p>
+            Note that if a number is stored in 2 or 4 bytes, you should reverse these bytes!
+          </p>
+          <p>
+            For example, if you read the
+            bytes <code>A4 70</code>, this actually represents the number
+            <span class="hex">0x70A4</span>. This is because the Intel processor stores integers as
+            little endian (the least-significant byte comes first).
+          </p>
+          <p>
+            Likewise, <code>11 22 33 44</code> corresponds to
+            <code>0x44332211</code>.
+          </p>
+        </div>
+        <div class="question">
+          <p>
+            Convert the following bytes to decimal values:
+          </p>
+          <table class="exercise" id="convert-bytes">
+            <tr><th>Bytes</th><th>Decimal value</th></tr>
+            <tr>
+              <td><code>01</code></td>
+              <td><%= decimal('1') %></td>
+            </tr>
+            <tr>
+              <td><code>FF 00</code></td>
+              <td><%= decimal('255') %></td>
+            </tr>
+            <tr>
+              <td><code>00 FF</code></td>
+              <td><%= decimal('65280') %></td>
+            </tr>
+            <tr>
+              <td><code>01 02 03 04</code></td>
+              <td><%= decimal('67305985') %></td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+      <section class="toc-elt">
+        <h2>Partition Layout</h2>
+        <p>After the boot sector, a number of copies of the File Allocation Table (FAT) are stored. Having
+          more than one copy can be useful if one of the copies gets corrupted due to bad disk blocks.</p>
+        <div class="question">
+          <label for="fat-count">How many copies of the FAT are there in the image?</label>
+          <%= decimal('2') %>
+        </div>
+        <p>Each FAT has a certain size and thus requires a certain amount of space on disk.</p>
+        <div class="question">
+          How large is one FAT? <%= decimal('9') %> sectors, which is equal to
+          <%= decimal('9') %> clusters or <%= decimal('4608') %> bytes.
+        </div>
+        <p>
+          After the FATs, the contents of the root directory is stored. This root directory contains references
+          to the files and directories that are stored on the root of the partition (i.e. typically at A:\ in
+          Windows). Each file or directory entry is 32 bytes. The root directory has a maximum size, which
+          is preallocated (meaning it cannot grow or shrink, and is not part of the "normal" data area).
+        </p>
+        <div class="question">
+          How many file/directory entries can be stored in the root directory
+          (use <a href="#boot-sector">Table 1</a>)?
+          <%= decimal('224') %>
+        </div>
+        <div class="question">
+          How large is the root directory, given that each entry is 32 bytes?
+          <%= decimal('7168') %> bytes or <%= decimal('14') %> sectors.
+        </div>
+        <p>
+          All the remaining sectors after the root directory can be used to store folder (or subdirectory) data.
+          Now that you know how large each section is, you should be able to calculate the offsets of each
+          section in the image. Note that each section immediately follows the previous (i.e. there is no wasted
+          space in between).
+        </p>
+        <div class="question">
+          Compute the offsets of the following sections.
+          Verify with your hex editor that the offsets are correct.
+          <table class="exercise" id="partition-layout-exercise">
+            <tr>
+              <td>Boot sector</td>
+              <td><span class="hex">0x0000</span></td>
+            </tr>
+            <tr>
+              <td>FAT 1</td>
+              <td><span class="hex">0x0200</span></td>
+            </tr>
+            <tr>
+              <td>FAT 2</td>
+              <td><%= hex('1400') %></td>
+            </tr>
+            <tr>
+              <td>Root directory</td>
+              <td><%= hex('2600') %></td>
+            </tr>
+            <tr>
+              <td>Data section</td>
+              <td><%= hex('4200') %></td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+      <section class="toc-elt">
+        <h2>Directories</h2>        
+        <p>
+          Each directory (including the root directory) consists of one or more sectors that contain directory
+          entries. A directory entry contains information about a subdirectory or file that is contained in the
+          directory. The structure of one such entry is shown <a href="#table-2">below</a>. Note that the
+          size of an entry is 32 bytes.
+        </p>
+        <table class="reference" id="directory-entry">
+          <tr>
+            <th>Offset</th>
+            <th>Length in bytes</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><span class="hex">0x00</span></td>
+            <td>8</td>
+            <td>The filename</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x08</span></td>
+            <td>3</td>
+            <td>The file extension</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0B</span></td>
+            <td>1</td>
+            <td>File attributes</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0C</span></td>
+            <td>1</td>
+            <td>Reserved ofr Windows NT</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0D</span></td>
+            <td>1</td>
+            <td>Creation - Millsecond stamp (actual 100th of a second)</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x0E</span></td>
+            <td>2</td>
+            <td>Creation time</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x10</span></td>
+            <td>2</td>
+            <td>Creation date</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x12</span></td>
+            <td>2</td>
+            <td>Last access date</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x14</span></td>
+            <td>2</td>
+            <td>Reserved for FAT32</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x16</span></td>
+            <td>2</td>
+            <td>Last write time</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x18</span></td>
+            <td>2</td>
+            <td>Last write date</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x1A</span></td>
+            <td>2</td>
+            <td>First logical cluster of the file</td>
+          </tr>
+          <tr>
+            <td><span class="hex">0x1C</span></td>
+            <td>4</td>
+            <td>File size in bytes</td>
+          </tr>
+        </table>
+
+        <p>
+          As an example take the following 32 bytes:
+        </p>
+        <table class="center bytes">
+          <tr>
+            <td>54</td><td>45</td><td>53</td><td>54</td><td>20</td><td>20</td><td>20</td><td>20</td><td>44</td><td>44</td><td>20</td><td>20</td><td>00</td><td>64</td><td>85</td><td>1B</td>
+          </tr>
+          <tr>
+            <td>5A</td><td>33</td><td>5A</td><td>33</td><td>00</td><td>00</td><td>85</td><td>1B</td><td>5A</td><td>33</td><td>03</td><td>01</td><td>B0</td><td>04</td><td>00</td><td>00</td>
+          </tr>
+        </table>
+        <p>
+          Interpreting these as a directory in the FAT12 filesystem gives us the following results.
+        </p>
+
+        <section>
+          <h3>Name and Extension</h3>
+          <table class="center bytes">
+            <tr>
+              <td class="hilight">54</td><td class="hilight">45</td><td class="hilight">53</td><td class="hilight">54</td><td class="hilight">20</td><td class="hilight">20</td><td class="hilight">20</td><td class="hilight">20</td><td class="hilight">44</td><td class="hilight">44</td><td class="hilight">20</td><td>20</td><td>00</td><td>64</td><td>85</td><td>1B</td>
+            </tr>
+            <tr>
+              <td>5A</td><td>33</td><td>5A</td><td>33</td><td>00</td><td>00</td><td>85</td><td>1B</td><td>5A</td><td>33</td><td>03</td><td>01</td><td>B0</td><td>04</td><td>00</td><td>00</td>
+            </tr>
+          </table>
+
+          <p>
+            The first 8 bytes contain the filename. We can look up the corresponding ASCII characters in an ASCII table.
+            The filename becomes "<code>test&nbsp;&nbsp;&nbsp;&nbsp;</code>". The extension
+            (the following three bytes) will be "<code>dd&nbsp;</code>". Spaces are used as padding, so the actual filename is
+            <code>test.dd</code>.
+          </p>
+          <p>
+            The first byte of the filename is special and can have different meanings. The following rules apply:
+          </p>
+          <ol>
+            <li>
+              A value of <code>0x00</code> is interpreted as "stop the search, there are no more entries in this directory".
+            </li>
+            <li>
+              It must not contain the value <code>0x20</code> (space).
+            </li>
+            <li>
+              A value of <code>0xE5</code> is interpreted as "the entry is free".
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h3>Attributes</h3>
+        <table class="center bytes">
+          <tr>
+            <td>54</td><td>45</td><td>53</td><td>54</td><td>20</td><td>20</td><td>20</td><td>20</td><td>44</td><td>44</td><td>20</td><td class="hilight">20</td><td>00</td><td>64</td><td>85</td><td>1B</td>
+          </tr>
+          <tr>
+            <td>5A</td><td>33</td><td>5A</td><td>33</td><td>00</td><td>00</td><td>85</td><td>1B</td><td>5A</td><td>33</td><td>03</td><td>01</td><td>B0</td><td>04</td><td>00</td><td>00</td>
+          </tr>
+        </table>
+          <p>
+            The next byte contains the attributes of the file or directory. A number of attributes
+            can be set. If an attribute is set, a specific bit is set in the value of the byte (this is also called a bit
+            vector). There are 8 possible bits that can be set in the byte, but only the first 6 bits have a specific
+            meaning:
+          </p>
+          <table class="reference" id="attributes" style="width: 60%;">
+            <tr><th>Bit</th><th>Description</th></tr>
+            <tr><td>0</td><td>The file is read-only.</td></tr>
+            <tr><td>1</td><td>The file is hidden.</td></tr>
+            <tr><td>2</td><td>The file is a system file.</td></tr>
+            <tr><td>3</td><td>The directory entry contains a volume label.</td></tr>
+            <tr><td>4</td><td>The entry represents a directory (not a file).</td></tr>
+            <tr><td>5</td><td>The File should be archived (used for backup purposes).</td></tr>
+          </table>
+
+          <div class="question">
+            Convert <code>0x20</code> to binary: <%= binary('00100000') %>
+          </div>
+          
+          <p>
+            The binary value of the byte 20 is <code>00100000</code>. Bit 0 is the rightmost bit, bit 7 is the leftmost bit.
+            In this case, only the archive attribute is set for the file.
+          </p>
+        </section>
+
+        <section>
+          <h3>Time and Date</h3>
+          <table class="center bytes">
+            <tr>
+              <td>54</td><td>45</td><td>53</td><td>54</td><td>20</td><td>20</td><td>20</td><td>20</td><td>44</td><td>44</td><td>20</td><td>20</td><td>00</td><td>64</td><td class="hilight">85</td><td class="hilight">1B</td>
+            </tr>
+            <tr>
+              <td class="hilight">5A</td><td class="hilight">33</td><td class="hilight">5A</td><td class="hilight">33</td><td>00</td><td>00</td><td class="hilight">85</td><td class="hilight">1B</td><td class="hilight">5A</td><td class="hilight">33</td><td>03</td><td>01</td><td>B0</td><td>04</td><td>00</td><td>00</td>
+            </tr>
+          </table>
+
+          <p>
+            A directory entry contains the creation time, creation date, last access date, last
+            write time, and last write date. Both the time components and the date components use 2 bytes (or
+            16 bits) each. The bits are used as follows:
+          </p>
+          <p>
+            The time uses 5 bits to store the hours, 6 bits for the minutes and 5 for the seconds. Note that we
+            cannot store 60 values in the 5 bits that are allocated to the seconds component. This means that
+            we will only store even values, and that the calculated value should be doubled. In the example,
+            the bytes that store the last write time contain the values <code>85 1B</code>, which represents the number
+            <code>0x1B85</code> or its binary value <%= binary('00011011', '0x1B in binary') %> <%= binary('10000101', '0x85 in binary') %>.
+            From this value, we extract
+          </p>
+          <ul>
+            <li>
+              the hours: <%= binary('00011') %>, or <%= decimal('3') %>
+            </li>
+            <li>
+              the minutes: <%= binary('011100') %>, or <%= decimal('28') %>
+            </li>
+            <li>
+              the seconds: <%= binary('00101') %>, or <%= decimal('5') %>, which multiplied by 2 gives <%= decimal('10') %>
+            </li>
+          </ul>
+          <p>
+            The 16 bits in the date component are distributed as follows: 7 bits for the amount of years since
+            1980, 4 bits for the month, and 5 bits for the day. In the example, if we extract the last write date
+            you should get the date <%= date('26/10/2005') %>.
+          </p>
+        </section>
+
+        <section>
+          <h3>First Cluster</h3>
+          <table class="center bytes">
+            <tr>
+              <td>54</td><td>45</td><td>53</td><td>54</td><td>20</td><td>20</td><td>20</td><td>20</td><td>44</td><td>44</td><td>20</td><td>20</td><td>00</td><td>64</td><td>85</td><td>1B</td>
+            </tr>
+            <tr>
+              <td>5A</td><td>33</td><td>5A</td><td>33</td><td>00</td><td>00</td><td>85</td><td>1B</td><td>5A</td><td>33</td><td class="hilight">03</td><td class="hilight">01</td><td>B0</td><td>04</td><td>00</td><td>00</td>
+            </tr>
+          </table>
+
+          <p>
+            This 16-bit value contains the identification number of the first (logical) cluster that
+            contains the data of this file. If the directory entry is a subdirectory (i.e. has the "subdirectory"
+            attribute set), then it points to the first cluster that contains the directory entries of this subdirectory.
+            In the example, the bytes <code>03 01</code> represent the value <code>0x103</code>, thus the logical cluster 259 contains
+            the first chunk of the file.
+          </p>
+        </section>
+          
+        <section>
+          <h3>File Size</h3>
+          <table class="center bytes">
+            <tr>
+              <td>54</td><td>45</td><td>53</td><td>54</td><td>20</td><td>20</td><td>20</td><td>20</td><td>44</td><td>44</td><td>20</td><td>20</td><td>00</td><td>64</td><td>85</td><td>1B</td>
+            </tr>
+            <tr>
+              <td>5A</td><td>33</td><td>5A</td><td>33</td><td>00</td><td>00</td><td>85</td><td>1B</td><td>5A</td><td>33</td><td>03</td><td>01</td><td class="hilight">B0</td><td class="hilight">04</td><td class="hilight">00</td><td class="hilight">00</td>
+            </tr>
+          </table>
+          <p>
+            The file size is stored in the last 4 bytes of the directory entry. This limits the maximum
+            file size on a partition to 2<sup>32</sup> bytes or 4Gb. The bytes <code>B0 04 00 00</code> represent a filesize of
+            <%= hex('04B0') %> or <%= decimal('1200') %> bytes.
+          </p>
+        </section>
+
+        <div class="question">
+          Interpret the following directory entry:
+          <pre>
+            5A 57 41 52 54 4B 41 53 20 20 20 10 00 00 36 33
+            5A 33 5A 33 00 00 36 33 5A 33 40 01 00 00 00 00
+          </pre>
+          <ul>
+            <li>Filename and extension: <%= text('ZWARTKAS') %></li>
+            <li>Attributes (choose between read-only, hidden, system file, system file, volume label, directory and file): <%= text('directory') %></li>
+            <li>Last write time: <%= time('06:25:44') %></li>
+            <li>Last write date: <%= date('26/10/2005') %></li>
+            <li>First cluster: <%= decimal('320') %></li>
+            <li>File size: <%= decimal('0') %></li>
+          </ul>
+        </div>
+        <br>
+        <div class="question">
+          List the files and subdirectories of the root directory of fat12.img. Give the name,
+          size and first cluster of each entry. Ignore long file name entries.
+          <ul>
+            <li>Volume label: <%= text('TESTFLOP') %></li>
+            <li>Directory
+              <ul>
+                <li>Name: <%= text('FOTOS') %></li>
+                <li>Size: <%= decimal('0') %></li>
+                <li>First cluster: <%= decimal('2') %></li>
+              </ul>
+            </li>
+            <li>File 1
+              <ul>
+                <li>Name: <%= text('SOM.XLS') %></li>
+                <li>Size: <%= decimal('13824') %></li>
+                <li>First cluster: <%= decimal('240') %></li>
+                <li>Last write time: <%= time('11:45:04') %></li>
+                <li>Last write date: <%= date('26/10/2005') %></li>
+              </ul>
+            </li>
+            <li>File 2
+              <ul>
+                <li>Name: <%= text('BOEK.DOC') %></li>
+                <li>Size: <%= decimal('17172') %></li>
+                <li>First cluster: <%= decimal('267') %></li>
+                <li>Last write time: <%= time('11:56:32') %></li>
+                <li>Last write date: <%= date('26/10/2005') %></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="toc-elt">
+        <h2>File Allocation Table</h2>
+        <p>
+          Up until now, we have seen how we can find and interpret the contents of the root directory, and
+          from there on find all the files and subdirectories on the partition. For each file, we know the start
+          cluster, but since a cluster is only 512 bytes, most files will consist of more than one cluster. Hence,
+          we need a mechanism to find the next clusters of a file, given its first cluster.
+        </p>
+        <p>
+          For this purpose, FAT12 stores a file allocation table at the beginning of the volume. This table is a
+          list of 12-bit entries, with one entry for each cluster in the data section. Because our image consists
+          of 2847 clusters, the file allocation table will contain 2847 12-bit entries, for a total size of 4269
+          bytes.
+        </p>
+        <p>
+          The entries in the FAT are actually pointers to the next logical cluster in the data section. Some
+          values have a special meaning:
+        </p>
+        <ul>
+          <li>
+            <code>0x000</code>: Free cluster
+          </li>
+          <li>
+            <code>0x001</code>, and <code>0xFF0</code>-<code>0xFF6</code>: Reserved
+          </li>
+          <li>
+            <code>0xFF7</code>: Bad cluster
+          </li>
+          <li>
+            <code>0xFF8</code>-<code>0xFFF</code>: This is the last cluster of the file
+          </li>
+        </ul>
+        <p>
+          All other values (<code>0x002</code> - <code>0xFEF</code>) are pointers to the next cluster of the file.
+        </p>
+        <img class="center" src="fat.png" style="width: 40%;" />
+        <p>
+          Consider the above figure where a user wants to read the file <code>foobar.txt</code>. The operating
+          system finds the correct directory entry that stores the information of this file. From the directory
+          entry, we find that the first logical cluster of the file is cluster <code>0x5CA</code>. In order to find the second
+          cluster of the file, we go to the FAT and look up the value that is stored in the FAT entry with
+          index <code>0x5CA</code>. We find the value <code>0x13A</code>, which is the identification number of the second cluster of
+          the file. The third cluster can be found by looking up the value of FAT entry <code>0x13A</code>, which gives us
+          the cluster ID <code>0x2B0</code>. Finally, if we look up the value of FAT entry <code>0x2B0</code>, we find the value <code>0xFF8</code>.
+          This is one of the special values mentioned above, which indicates that this is the last cluster of the
+          file. Putting this all together, we can conclude that the file <code>foobar.txt</code> consists of the logical clusters
+          <code>0x5CA</code>, <code>0x13A</code>, <code>0x2B0</code> (in that order).
+        </p>
+
+        <p>
+          Every FAT entry is a 12-bit value. This means that one entry cannot be stored in one byte, yet it
+          also does not require the full capacity of two bytes. In order not to waste space, two FAT entries are
+          stored together in 3 bytes (or 24 bits). You can convert from the hexadecimal values of the three
+          bytes to the hexadecimal values of the two FAT entries using the following rule (pay attention to
+          the order!): <code>UV WX YZ</code> becomes FAT entries <code>0xXUV</code> and <code>0xYZW</code>.
+        </p>
+
+        <div class="question">
+          <p>
+            Imagine the first 12 bytes of a FAT are <code>F0 FF FF 00 40 00 05 F0 FF 00 00 00</code>.
+            Every FAT entry is 12 bits long, which means these 12 bytes contain 8 FAT entries:            
+          </p>
+          <ol start="0">
+            <li><code>0xFF0</code></li>
+            <li><%= hex('FFF') %></li>
+            <li><%= hex('000') %></li>
+            <li><%= hex('004') %></li>
+            <li><%= hex('005') %></li>
+            <li><%= hex('FFF') %></li>
+            <li><%= hex('000') %></li>
+            <li><%= hex('000') %></li>
+          </ol>
+          <p>
+            Clusters 0 and 1 are never used in the FAT, so you can ignore them. Which clusters are free? (List them in increasing order)
+          </p>
+          <ul>
+            <li><%= decimal('2') %></li>
+            <li><%= decimal('6') %></li>
+            <li><%= decimal('7') %></li>
+          </ul>
+          <p>
+            If the first cluster of a file is cluster 3,
+            its data is spread among clusters <%= decimal('3') %>, <%= decimal('4') %> and <%= decimal('5') %>.
+            The file is at most <%= decimal('1536') %> bytes long. Say the file contains 1200 bytes,
+            then <%= decimal('336') %> bytes of the last cluster remain unused.
+            This is called slack space and is actually lost space due to internal fragmentation.
+        </div>
+
+        <p>
+          <em>Hint</em> To find the correct bytes in the FAT that correspond to a certain cluster ID, you can use this
+          simple formula: (Cluster / 2) &times; 3. This gives you the byte offset of the first of the three bytes that
+          contain two FAT entries. Keep in mind that this is the byte offset from the start of the FAT; you
+          need to add the offset of the FAT itself to this number as well! If Cluster ID is even, you need the
+          first FAT entry, if it is odd you need the second FAT entry.
+        </p>
+
+        <div class="question">
+          How many clusters will the file som.xls occupy (use the file size to calculate this)?
+          <%= decimal('27') %>
+        </div>
+        <br/>
+        <div class="question">
+          Find all logical clusters of the file som.xls on fat12.img and reconstruct the file.
+          <ol>
+            <li><span class="hex">0x0F0</span></li>
+            <li><%= hex('0F1') %></li>
+            <li><%= hex('0F2') %></li>
+            <li><%= hex('0F3') %></li>
+            <li><%= hex('0F4') %></li>
+            <li><%= hex('0F5') %></li>
+            <li><%= hex('0F6') %></li>
+            <li><%= hex('0F7') %></li>
+            <li><%= hex('0F8') %></li>
+            <li><%= hex('0F9') %></li>
+            <li><%= hex('0FA') %></li>
+            <li><%= hex('0FB') %></li>
+            <li><%= hex('0FC') %></li>
+            <li><%= hex('0FD') %></li>
+            <li><%= hex('0FE') %></li>
+            <li><%= hex('0FF') %></li>
+            <li><%= hex('100') %></li>
+            <li><%= hex('101') %></li>
+            <li><%= hex('102') %></li>
+            <li><%= hex('103') %></li>
+            <li><%= hex('104') %></li>
+            <li><%= hex('105') %></li>
+            <li><%= hex('106') %></li>
+            <li><%= hex('107') %></li>
+            <li><%= hex('108') %></li>
+            <li><%= hex('109') %></li>
+            <li><%= hex('10A') %></li>
+          </ol>
+        </div>        
+        <br/>
+        <p>
+          The cluster IDs that we have been using are logical clusters, meaning that they represent the cluster
+          number starting from the beginning of the data section. The numbers 0 and 1 have a special meaning
+          and are not used as cluster IDs. So the first cluster of the data section has cluster ID 2. If we want
+          to know where exactly a logical cluster is stored on the disk, we need to it into a physical clusters.
+        </p>
+        <p>
+          We have already calculated that there are 33 clusters before the start of the data section (1 boot
+          cluster, 9 clusters for each FAT, and 14 clusters for the root directory). Using this information, and
+          knowing that the first valid cluster ID is 2, we can deduce the following formula to calculate the
+          physical cluster ID from a given logical cluster ID: physicalID = 33 + logicalID - 2.
+        </p>
+        <p>
+          Once we know the physical cluster ID, we can calculate the physical location of that cluster on the
+          disk by multiplying the ID with the cluster size (512 bytes).
+        </p>
+        <div class="question">
+          What is the physical location of the first block of som.xls?
+          <%= hex('21E00') %>
+        </div>        
+      </section>
+    </section>
+    </div>
+  </body>
+</html>
