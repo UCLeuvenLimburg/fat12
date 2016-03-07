@@ -1,0 +1,154 @@
+\documentclass[a4paper]{article}
+\usepackage{a4wide}
+\usepackage{tikz}
+\usepackage{booktabs}
+
+
+\pagestyle{empty}
+
+\newcommand{\HEX}[1]{\texttt{0x#1}}
+
+\newcommand{\diskoverview}{
+  \begin{center}
+    \begin{tikzpicture}[part/.style={minimum width=5cm,minimum height=1cm,draw}]
+      \begin{scope}[rotate=90,transform shape]
+        \node[part] (boot sector) {boot sector};
+        \node[part,anchor=north,yshift=-1mm] (fat 1) at (boot sector.south) {FAT 1};
+        \node[part,anchor=north,yshift=-1mm] (fat 2) at (fat 1.south) {FAT 2};
+        \node[minimum width=5cm,minimum height=1cm,anchor=north,yshift=-1mm] (fat dots) at (fat 2.south) {\dots};
+        \node[part,anchor=north,yshift=-1mm] (fat n) at (fat dots.south) {FAT $n$};
+        \node[part,anchor=north,yshift=-1mm] (root dir) at (fat n.south) {root directory};
+        \node[part,anchor=north,yshift=-1mm] (data) at (root dir.south) {clusters (starting with \#2)};
+      \end{scope}
+    \end{tikzpicture}
+  \end{center}
+}
+
+
+\newcommand{\fatstructure}{
+  \begin{center}
+    \begin{tikzpicture}[box/.style={minimum width=1cm,minimum height=1cm,draw,anchor=south west}]
+      \begin{scope}
+        \node[box] at (0,0) {\Huge B};
+        \node[box] at (1,0) {\Huge C};
+      \end{scope}
+
+      \begin{scope}[xshift=2.2cm]
+        \node[box] at (0,0) {\Huge Z};
+        \node[box] at (1,0) {\Huge A};
+      \end{scope}
+
+      \begin{scope}[xshift=4.4cm]
+        \node[box] at (0,0) {\Huge X};
+        \node[box] at (1,0) {\Huge Y};
+      \end{scope}
+
+      \begin{scope}[xshift=0cm,yshift=-2cm]
+        \node[box] at (0,0) {\Huge A};
+        \node[box] at (1,0) {\Huge B};
+        \node[box] at (2,0) {\Huge C};
+      \end{scope}
+
+      \begin{scope}[xshift=3.4cm,yshift=-2cm]
+        \node[box] at (0,0) {\Huge X};
+        \node[box] at (1,0) {\Huge Y};
+        \node[box] at (2,0) {\Huge Z};
+      \end{scope}
+
+      \draw[->,thick] (3.2,-0.1) -- +(0,-.75);
+    \end{tikzpicture}
+  \end{center}
+}
+
+
+\newcommand{\bootsector}{\bgroup
+  \newcommand{\entry}[3]{\HEX{##1} & ##2 & ##3 \tabularnewline}
+  \begin{center}
+    \begin{tabular}{ccl}
+      \textbf{Offset} & \textbf{Length} & \textbf{Description} \tabularnewline
+      \toprule
+      \entry{00}{3}{Instructions to jump to the bootstrap code}
+      \midrule
+      \entry{03}{8}{Name of the formatting OS}
+      \midrule
+      \entry{0B}{2}{Bytes per sector}
+      \midrule
+      \entry{0D}{1}{Sectors per cluster}
+      \midrule
+      \entry{0E}{2}{Reserved sectors from the start of the volume}
+      \midrule
+      \entry{10}{1}{Number of FAT copies}
+      \midrule
+      \entry{11}{2}{Number of possible root entries}
+      \midrule
+      \entry{13}{2}{Small number of sectors}
+      \midrule
+      \entry{15}{1}{Media descriptor}
+      \midrule
+      \entry{16}{2}{Sectors per FAT}
+      \midrule
+      \entry{18}{2}{Sectors per track}
+      \midrule
+      \entry{1A}{2}{Number of heads}
+      \midrule
+      \entry{1C}{4}{Hidden sectors}
+      \midrule
+      \entry{20}{4}{Large number of sectors}
+      \midrule
+      \entry{24}{1}{Drive number}
+      \midrule
+      \entry{25}{1}{Reserved}
+      \midrule
+      \entry{26}{1}{Extended boot signature}
+      \midrule
+      \entry{27}{4}{Volume serial number}
+      \midrule
+      \entry{2B}{11}{Volume label}
+      \midrule
+      \entry{36}{8}{File system type --- should be \texttt{FAT12}}
+      \midrule
+      \entry{3E}{448}{Bootstrap code}
+      \midrule
+      \entry{1FE}{2}{Boot sector signature --- should be \HEX{AA55}}
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \egroup
+}
+
+
+
+\begin{document}
+
+\begin{center}
+  \Huge FAT12 Reference
+\end{center}
+
+\vfil
+\begin{figure}[!h]
+  \bootsector
+  \caption{Boot Sector}
+\end{figure}
+\vfil
+\clearpage
+
+\vfil
+\begin{figure}[!h]
+  \diskoverview
+  \caption{Disk Overview}
+\end{figure}
+\vfil
+\begin{center}
+  \begin{tabular}{rl}
+    successor of cluster $i$ & $\texttt{fat\_offset} + 3 \cdot \mathrm{floor}\left(\frac{i}{2}\right)$ \\[5mm]
+    physical address of cluster $i$ & $\texttt{data\_offset} + (i - 2) \cdot \texttt{cluster\_size}$
+  \end{tabular}
+\end{center}
+\vfil
+\begin{figure}[!h]
+  \fatstructure
+  \caption{Interpreting FAT bytes}
+\end{figure}
+\vfil
+
+\end{document}
