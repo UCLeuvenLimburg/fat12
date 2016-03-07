@@ -1,0 +1,115 @@
+\documentclass{fat12-exam}
+
+
+<%
+  def name
+    'example'
+  end
+
+  def academic_year
+    '2015--2016'
+  end
+
+  def date
+    'TODO'
+  end
+
+  def time
+    'TODO'
+  end
+
+  def dir
+    'DIR8'
+  end
+
+  def file
+    'FILE4'
+  end
+%>
+
+
+\exam{
+  academiejaar={<%= academic_year %>},
+  opleiding={Bachelor in de Toegepaste Informatica},
+  fase={1},
+  examinator={J.\ Strypsteen, M.\ Vandemaele},
+  opo={MBI10A -- Besturingssystemen 1},
+  ola={MBI10a -- Besturingssystemen 1},
+  activiteit={Examen},
+  hulpmiddelen={PC},
+  datum={<%= date %>},
+  beginuur={<%= time %>},
+  duur={1.5 uur}
+}
+
+
+\begin{document}
+
+\firstpagegeometry
+
+% \setcounter{section}{3}
+\section{FAT12}
+
+\subsection{Boot Sector}
+Haal de volgende informatie uit de boot sector.
+%\vskip1cm
+\vfil
+{
+  \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}#2} \\[.75cm]}
+  \begin{center}
+    \begin{tabular}{rl}
+      \entry{Bytes per sector}{<%= bytes_per_sector %>}
+      \entry{Totaal aantal sectoren}{<%= sector_count %>}
+      \entry{Totale grootte schijf in bytes}{<%= disk_size %>}
+      \entry{Aantal sectoren per FAT}{<%= sectors_per_fat %>}
+      \entry{Grootte FAT in bytes}{<%= bytes_per_fat %>}
+      \entry{Aantal FATs}{<%= fat_count %>}
+      \entry{Aantal root entries}{<%= root_entry_count %>}
+      \entry{Beginadres eerste FAT (hex)}{<%= '0x' + fat_offset.to_s(16).upcase %>}
+      \entry{Beginadres root directory (hex)}{<%= '0x' + root_offset.to_s(16).upcase %>}
+      \entry{Beginadres eerste datacluster (hex)}{<%= '0x' + data_offset.to_s(16).upcase %>}
+      \entry{Sectoren per cluster}{<%= sectors_per_cluster %>}
+      \entry{Bytes per cluster}{<%= bytes_per_cluster %>}
+    \end{tabular}
+  \end{center}
+}
+\vfil
+
+\normalpagegeometry
+
+\subsection{Opzoeken Bestand}
+
+\noindent Zoek de entry op van de directory \texttt{<%= dir %>}
+in de root. Vul in (hexadecimaal):
+
+\directoryentryform{<%= dir_bytes %>}
+
+\noindent Zoek in deze directory naar \texttt{<%= file %>} en vervolledig onderstaand rooster.
+
+\directoryentryform{<%= file_bytes %>}
+
+\noindent Zet de tijd en datum van de last write van het bestand om naar binair:
+\timeform{<%= file_time_bits %>}
+\dateform{<%= file_date_bits %>}
+
+
+\noindent Interpreteer deze bits:
+{
+  \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}#2} \\[.5cm]}
+  \begin{center}
+    \begin{tabular}{rc}
+      \entry{Tijd laatste write}{<%= file_time %>}
+      \entry{Datum laatste write}{<%= file_date %>}
+    \end{tabular}
+  \end{center}
+}
+
+
+\noindent De inhoud van het bestand is verspreid over meerdere clusters; noteer hun logische indices:\vskip5mm
+\begin{center}
+  \ALT{\rule{5cm}{.25pt}}{<%= file_clusters %>} \parbox{0mm}{(decimaal)}
+\end{center}
+
+
+
+\end{document}
