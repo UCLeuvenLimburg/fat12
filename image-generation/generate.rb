@@ -27,4 +27,4 @@ puts 'Unmounting'
 `umount disk`
 
 puts "Generating xml"
-`java -jar img-reader.jar #{IMAGE} > #{File.basename(IMAGE, '.img')}.xml`
+`java -jar ../image-reader/image-reader.jar #{IMAGE} > #{File.basename(IMAGE, '.img')}.xml`
