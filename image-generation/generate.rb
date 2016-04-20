@@ -1,43 +1,83 @@
+require 'pathname'
+
+class ImageContext
+  def file(path:, size:, date_time:)
+    path = Pathname.new path
+    puts "# Creating #{path}"
+    puts "mkdir -p disk/#{path.dirname}"
+    puts "dd if=/dev/urandom of=disk/#{path} count=#{size} bs=1"
+    puts "touch -m -a -t #{date_time.strftime('%Y%m%d%H%M.%S')} disk/#{path}"
+  end
+end
+
+class DescriptionBase
+  def base_name
+    raise "Not implemented"
+  end
+
+  def image_name
+    "#{base_name}.img"
+  end
+
+  def xml_name
+    "#{base_name}.xml"
+  end
+
+  def block_size
+    raise "Not implemented"
+  end
+
+  def block_count
+    raise "Not implemented"
+  end
+
+  def number_of_fats
+    raise "Not implemented"
+  end
+
+  def volume_name
+    raise "Not implemented"
+  end
+
+  def root_dir_size
+    raise "Not implemented"
+  end
+
+  def sectors_per_cluster
+    1
+  end
+
+  def generate_files(context)
+    raise "Not implemented"
+  end
+end
+
+def generate_image(description)
+  puts '# Creating disk image'
+  puts "dd if=/dev/zero of=#{description.image_name} bs=#{description.block_size} count=#{description.block_count}"
+
+  puts '# Formatting disk image'
+  puts "mkfs.vfat -F 12 -f #{description.number_of_fats} -n #{description.volume_name} -r #{description.root_dir_size} -s #{description.sectors_per_cluster} #{description.image_name}"
+
+  puts '# Mounting'
+  puts "mkdir -p disk"
+  puts "mount -o loop #{description.image_name} disk"
+
+  puts '# Adding directories and folders'
+  description.generate_files( ImageContext.new )
+
+  puts '# Unmounting'
+  puts "umount disk"
+
+  puts "# Generating xml"
+  puts "java -jar ../image-reader/image-reader.jar #{description.image_name} > #{description.xml_name}"
+end
+
+
+
 abort 'Specify data file' unless ARGV.length == 1
 
 load ARGV[0]
 
 
-def pad(x)
-  x.to_s.rjust(2, '0')
-end
-
-
-puts 'Creating disk image'
-`dd if=/dev/zero of=#{IMAGE} bs=#{BLOCK_SIZE} count=#{BLOCK_COUNT}`
-
-
-puts 'Formatting disk image'
-`mkfs.vfat -F 12 -f #{NUMBER_OF_FATS} -n #{VOLUME_NAME} -r #{ROOT_DIR_SIZE} -s #{SECTORS_PER_CLUSTER} #{IMAGE}`
-
-puts 'Mounting'
-`mkdir -p disk`
-`mount -o loop #{IMAGE} disk`
-
-puts 'Adding directories and folders'
-(1..NUMBER_OF_DIRECTORIES).each do |i|
-  `mkdir disk/dir#{i}`
-
-  (1..NUMBER_OF_FILES_PER_DIRECTORY).each do |j|
-    `dd if=/dev/urandom of=disk/dir#{i}/file#{j} count=#{NUMBER_OF_BYTES_PER_FILE} bs=1`
-    day = rand(27) + 1
-    month = rand(12) + 1
-    year = rand(35) + 1980
-    hour = rand(12)
-    mins = rand(60)
-    secs = rand(60)
-
-    `touch -m -a -t #{year}#{pad month}#{pad day}#{pad hour}#{pad mins}.#{pad secs} disk/dir#{i}/file#{j}`
-  end
-end
-
-puts 'Unmounting'
-`umount disk`
-
-puts "Generating xml"
-`java -jar ../image-reader/image-reader.jar #{IMAGE} > #{File.basename(IMAGE, '.img')}.xml`
+generate_image( Description.new )

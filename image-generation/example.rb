@@ -1,45 +1,35 @@
-# Naam van de image (het bestand)
-IMAGE='fat12-19juni-vm.img'
+class Description < DescriptionBase
+  def base_name
+    'example'
+  end
 
+  def block_size
+    512
+  end
 
-#
-# Beschrijving van de schijf
-#
+  def block_count
+    1024
+  end
 
-# Grootte blocks
-BLOCK_SIZE=512
+  def number_of_fats
+    2
+  end
 
-# Aantal blocks
-BLOCK_COUNT=1024
+  def volume_name
+    'VOLUME'
+  end
 
+  def root_dir_size
+    512
+  end
 
-#
-# FAT12 parameters
-#
+  def sectors_per_cluster
+    1
+  end
 
-# Aantal FATs
-NUMBER_OF_FATS=2
-
-# Naam
-VOLUME_NAME='19A'
-
-# Aantal entries mogelijk in root
-ROOT_DIR_SIZE=512
-
-# Aantal sectors per cluster
-SECTORS_PER_CLUSTER=1
-
-
-#
-# Inhoud van de schijf
-#
-
-# Aantal directories (zullen dir1, dir2, ... heten)
-NUMBER_OF_DIRECTORIES=8
-
-# Aantal bestanden per directory (dir1/file1, dir2/file2, ...)
-NUMBER_OF_FILES_PER_DIRECTORY=6
-
-# Aantal random bytes per bestand
-NUMBER_OF_BYTES_PER_FILE=1787
-
+  def generate_files(context)
+    context.instance_eval do
+      file(path: 'dir/file', size: 1000, date_time: Time.new(2000,1,1,12,0,0))
+    end
+  end
+end
