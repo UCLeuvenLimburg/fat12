@@ -44,7 +44,7 @@ class Description < DescriptionBase
 
     context.instance_eval do
       (1..10).each do |i|
-        size = rand(bs) * rand(5) + 5
+        size = bs * (rand(5) + 2) + rand(bs)
         year = 1980 + rand(35)
         month = 1 + rand(12)
         day = 1 + rand(28)
