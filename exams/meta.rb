@@ -11,7 +11,7 @@ class Context
   include Contracts::TypeChecking
 
   def load_image(image)
-    raw_xml_data = Java.run_jar( Pathname.new('image-reader.jar'), image )
+    raw_xml_data = Java.run_jar( Pathname.new('../image-reader/image-reader.jar'), image )
     Nokogiri::XML(raw_xml_data)
   end
 
@@ -24,11 +24,11 @@ class Context
   end
   
   def lookup(xpath)
-    begin
-      disk.at_xpath(xpath).content
-    rescue StandardError => e
-      abort e.to_s
-    end
+    node = disk.at_xpath(xpath)
+
+    abort "Could not find #{xpath}" unless node
+
+    node.content
   end
     
   def image
@@ -155,8 +155,8 @@ meta_object do
         out.write("\\def\\solution{}\n#{data}")
       end
 
-      LaTeX.compile(Pathname.new tex_filename)
-      LaTeX.compile(Pathname.new solution_filename)
+#      LaTeX.compile(Pathname.new tex_filename)
+#      LaTeX.compile(Pathname.new solution_filename)
     end
 
     action_name

@@ -19,11 +19,11 @@
   end
 
   def dir
-    'DIR8'
+    'DIR'
   end
 
   def file
-    'FILE4'
+    'FILE'
   end
 %>
 
