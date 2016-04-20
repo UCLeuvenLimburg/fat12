@@ -145,6 +145,10 @@ end
   filename = "#{basename}.sh"
 
   File.open(filename, 'w') do |out|
-    generate_image( RandomDescription.new(basename), out )
+    begin
+      generate_image( RandomDescription.new(basename), out )
+    rescue
+      puts "Failed on #{filename}"
+    end
   end
 end

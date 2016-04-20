@@ -2,10 +2,6 @@
 
 
 <%
-  def name
-    'img1'
-  end
-
   def academic_year
     '2015--2016'
   end

@@ -9,6 +9,14 @@ require 'nokogiri'
 class Context
   include Contracts::TypeChecking
 
+  def initialize(name)
+    @name = name
+  end
+
+  def name
+    @name
+  end
+
   def load_image(image)
     raw_xml_data = Java.run_jar( Pathname.new('../image-reader/image-reader.jar'), image )
     Nokogiri::XML(raw_xml_data)
@@ -25,7 +33,7 @@ class Context
   def lookup(xpath)
     node = disk.at_xpath(xpath)
 
-    abort "Could not find #{xpath}" unless node
+    raise "Could not find #{xpath}" unless node
 
     node.content
   end
@@ -137,13 +145,19 @@ def main
     puts "Processing #{img}"
 
     image_path = Pathname.new img
+    name = image_path.basename('.img')
     template_path = Pathname.new "img.template"
     tex_filename = image_path.sub_ext('.tex').to_s
 
-    data = Template.generate(template_path.read, Context.new)
+    begin
 
-    File.open(tex_filename, 'w') do |out|
-      out.write data
+      data = Template.generate(template_path.read, Context.new(name))
+
+      File.open(tex_filename, 'w') do |out|
+        out.write data
+      end
+    rescue
+      puts "Failed on #{img}"
     end
   end
 end
