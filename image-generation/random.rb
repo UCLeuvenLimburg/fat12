@@ -20,7 +20,7 @@ class Description < DescriptionBase
   end
 
   def block_count
-    @block_count ||= (rand 1000 + 500)
+    @block_count ||= (rand 500 + 300)
   end
 
   def number_of_fats
