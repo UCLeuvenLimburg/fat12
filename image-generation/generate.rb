@@ -52,32 +52,31 @@ class DescriptionBase
   end
 end
 
-def generate_image(description)
-  puts '# Creating disk image'
-  puts "dd if=/dev/zero of=#{description.image_name} bs=#{description.block_size} count=#{description.block_count}"
+def generate_image(description, out)
+  out.puts '# Creating disk image'
+  out.puts "dd if=/dev/zero of=#{description.image_name} bs=#{description.block_size} count=#{description.block_count}"
 
-  puts '# Formatting disk image'
-  puts "mkfs.vfat -F 12 -f #{description.number_of_fats} -n #{description.volume_name} -r #{description.root_dir_size} -s #{description.sectors_per_cluster} #{description.image_name}"
+  out.puts '# Formatting disk image'
+  out.puts "mkfs.vfat -F 12 -f #{description.number_of_fats} -n #{description.volume_name} -r #{description.root_dir_size} -s #{description.sectors_per_cluster} #{description.image_name}"
 
-  puts '# Mounting'
-  puts "mkdir -p disk"
-  puts "mount -o loop #{description.image_name} disk"
+  out.puts '# Mounting'
+  out.puts "mkdir -p disk"
+  out.puts "mount -o loop #{description.image_name} disk"
 
-  puts '# Adding directories and folders'
+  out.puts '# Adding directories and folders'
   description.generate_files( ImageContext.new )
 
-  puts '# Unmounting'
-  puts "umount disk"
+  out.puts '# Unmounting'
+  out.puts "umount disk"
 
-  puts "# Generating xml"
-  puts "java -jar ../image-reader/image-reader.jar #{description.image_name} > #{description.xml_name}"
+  out.puts "# Generating xml"
+  out.puts "java -jar ../image-reader/image-reader.jar #{description.image_name} > #{description.xml_name}"
 end
 
 
 
-abort 'Specify data file' unless ARGV.length == 1
+abort 'Specify data file' if ARGV.length == 0
 
 load ARGV[0]
 
-
-generate_image( Description.new )
+generate_image( Description.new(*ARGV[1..-1]), STDOUT )
