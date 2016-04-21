@@ -445,4 +445,19 @@
   \end{center}
 }
 
+\newcommand{\bootsectorform}{
+  \begin{center}
+    \begin{tikzpicture}
+      \draw (0,0) grid (16,-2);
+
+      \draw[|-|,yshift=2mm] (11,0) -- ++(2,0) node[midway,above,font=\tiny] {bytes/sector};
+      \draw[|-|,yshift=2mm] (13,0) -- ++(1,0) node[midway,above,font=\tiny] {sectors/cluster};
+      \draw[|-|,yshift=-2mm] (0,-2) -- ++(1,0) node[midway,below,font=\tiny] {\#FATs};
+      \draw[|-|,yshift=-2mm] (1,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#root entries};
+      \draw[|-|,yshift=-2mm] (3,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#sectors};
+      \draw[|-|,yshift=-2mm] (6,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#sectors/FAT};
+    \end{tikzpicture}
+  \end{center}
+}
+
 \newcommand{\HEX}[1]{\texttt{0x#1}}
