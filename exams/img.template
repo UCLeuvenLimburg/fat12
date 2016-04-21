@@ -1,3 +1,4 @@
+\def\solution{}
 \documentclass{fat12-exam}
 
 
@@ -44,43 +45,46 @@
 \firstpagegeometry
 
 % \setcounter{section}{3}
-\section{FAT12}
+\begin{center} \Huge \textbf{FAT12} \end{center}
 
-\subsection{Boot Sector}
-Haal de volgende informatie uit de boot sector.
 %\vskip1cm
 \vfil
+Noteer hieronder de boot sector bytes (hexadecimaal):
+\bootsectorform
+\vskip1cm
+Interpreteer deze bytes:
 {
-  \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}#2} \\[.75cm]}
+  \newcommand{\entry}[2]{#1 & \ALT{\rule{2.5cm}{.25pt}}{\hspace{2mm}\solfont #2}}
   \begin{center}
-    \begin{tabular}{rl}
-      \entry{Bytes per sector}{<%= bytes_per_sector %>}
-      \entry{Totaal aantal sectoren}{<%= sector_count %>}
-      \entry{Totale grootte schijf in bytes}{<%= disk_size %>}
-      \entry{Aantal sectoren per FAT}{<%= sectors_per_fat %>}
-      \entry{Grootte FAT in bytes}{<%= bytes_per_fat %>}
-      \entry{Aantal FATs}{<%= fat_count %>}
-      \entry{Aantal root entries}{<%= root_entry_count %>}
-      \entry{Beginadres eerste FAT (hex)}{<%= '0x' + fat_offset.to_s(16).upcase %>}
-      \entry{Beginadres root directory (hex)}{<%= '0x' + root_offset.to_s(16).upcase %>}
-      \entry{Beginadres eerste datacluster (hex)}{<%= '0x' + data_offset.to_s(16).upcase %>}
-      \entry{Sectoren per cluster}{<%= sectors_per_cluster %>}
-      \entry{Bytes per cluster}{<%= bytes_per_cluster %>}
+    \begin{tabular}{rlrl}
+      \entry{Bytes per sector}{<%= bytes_per_sector %>} &
+      \entry{Totaal aantal sectoren}{<%= sector_count %>} \\[5mm]
+      \entry{Grootte schijf in bytes}{<%= disk_size %>} &
+      \entry{Aantal sectoren per FAT}{<%= sectors_per_fat %>} \\[5mm]
+      \entry{Grootte FAT in bytes}{<%= bytes_per_fat %>} &
+      \entry{Aantal FATs}{<%= fat_count %>} \\[5mm]
+      \entry{Sectoren per cluster}{<%= sectors_per_cluster %>} &
+      \entry{Bytes per cluster}{<%= bytes_per_cluster %>} \\[5mm]
+      \entry{Aantal root entries}{<%= root_entry_count %>} &
+      \entry{Startadres eerste FAT (hex)}{<%= '0x' + fat_offset.to_s(16).upcase %>} \\[5mm]
+      \entry{Startadres root directory (hex)}{<%= '0x' + root_offset.to_s(16).upcase %>} &
+      \entry{Startadres eerste datacluster (hex)}{<%= '0x' + data_offset.to_s(16).upcase %>} \\[5mm]
     \end{tabular}
   \end{center}
 }
 \vfil
+\diskstructure
+\vfil
+
 
 \normalpagegeometry
-
-\subsection{Opzoeken Bestand}
 
 \noindent Zoek de entry op van de directory \texttt{<%= dir %>}
 in de root. Vul in (hexadecimaal):
 
 \directoryentryform{<%= dir_bytes %>}
 
-\noindent Zoek in deze directory naar \texttt{<%= file %>} en vervolledig onderstaand rooster.
+\noindent Zoek in deze directory naar \texttt{<%= file %>} en vervolledig onderstaand rooster (hexadecimaal).
 
 \directoryentryform{<%= file_bytes %>}
 
@@ -91,19 +95,20 @@ in de root. Vul in (hexadecimaal):
 
 \noindent Interpreteer deze bits:
 {
-  \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}#2} \\[.5cm]}
+  \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}\solfont #2} \\[.5cm]}
   \begin{center}
     \begin{tabular}{rc}
-      \entry{Tijd laatste write}{<%= file_time %>}
-      \entry{Datum laatste write}{<%= file_date %>}
+      \entry{Tijd last write:}{<%= file_time %>}
+      \entry{Datum last write:}{<%= file_date %>}
     \end{tabular}
   \end{center}
 }
 
 
-\noindent De inhoud van het bestand is verspreid over meerdere clusters; noteer hun logische indices:\vskip5mm
+\noindent De inhoud van het bestand is verspreid over meerdere clusters; noteer hun logische indices in volgorde:
+\vskip1cm
 \begin{center}
-  \ALT{\rule{5cm}{.25pt}}{<%= file_clusters %>} \parbox{0mm}{(decimaal)}
+  \ALT{\rule{8cm}{.25pt}}{\solfont <%= file_clusters %>} \parbox{0mm}{(decimaal)}
 \end{center}
 
 

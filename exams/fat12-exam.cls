@@ -2,8 +2,8 @@
 \ProvidesPackage{khlexamen}[04/07/2014]
 \LoadClass{scrartcl}
 
-\RequirePackage[paper=a4paper,headheight=1.2cm,top=2cm,bottom=1.5cm,includeheadfoot]{geometry}
-\RequirePackage{a4wide}
+\RequirePackage[paper=a4paper,headheight=1.2cm,top=2cm,bottom=1.5cm,left=1.5cm,right=1.5cm,includeheadfoot]{geometry}
+%\RequirePackage{a4wide}
 \RequirePackage{scrpage2}
 \RequirePackage{afterpage}
 \RequirePackage{tabularx}
@@ -22,9 +22,15 @@
 \RequirePackage{framed}
 \RequirePackage{etoolbox}
 
+\ProcessOptions\relax
+
 \newtoggle{solution}
 
-\ProcessOptions\relax
+
+\newcommand{\solfont}{\bfseries\color{red}}
+
+\newcommand{\firstpagegeometry}{\newgeometry{includeheadfoot,headheight=5cm,top=1cm,bottom=1.5cm,left=1.5cm,right=1.5cm}}
+\newcommand{\normalpagegeometry}{\restoregeometry}
 
 \newcommand{\ALT}[2]{\iftoggle{solution}{#2}{#1}}
 
@@ -92,7 +98,7 @@
 \newcommand{\header@produce}{%
   \footnotesize\normalfont%
   \begin{tabular}{rlr}
-    Academiejaar: & \exam@academiejaar & \multirow{4}{2cm}[0mm]{\includegraphics[width=3cm]{ucll-logo.png}} \\
+    Academiejaar: & \exam@academiejaar & \multirow{4}{0cm}[0mm]{\includegraphics[width=3cm]{ucll-logo.png}} \\
     Opleiding: & \exam@opleiding  & \\
     Fase: & \exam@fase  & \\
     Examinator: & \exam@examinator  & \\
@@ -112,7 +118,7 @@
   \begin{tabular}{rlr}
     OLA: & \exam@ola  & \\
     Datum: & \exam@datum &  \\[2mm]
-    Student: & \multicolumn{2}{l}{\parbox[b][.5cm][b]{9cm}{\dotfill} \hspace{1mm} \hspace{1mm} Reeks: \parbox[b][.5cm][b]{1cm}{\dotfill}}
+    Student: & \multicolumn{2}{l}{\parbox[b][.5cm][b]{12cm}{\dotfill} \hspace{1mm} \hspace{1mm} Reeks: \parbox[b][.5cm][b]{1cm}{\dotfill}}
  \end{tabular}\hspace*{\fill}%
 }
 
@@ -134,10 +140,6 @@
   highlight/.style={fill=gray!50}
 }
 
-\newcommand{\firstpagegeometry}{\newgeometry{includeheadfoot,headheight=5cm,top=2cm,bottom=1.5cm}}
-\newcommand{\normalpagegeometry}{\restoregeometry}
-
-
 
 \newcommand{\directoryentryform}[1]{
   \begin{center}
@@ -149,30 +151,30 @@
             \i = \x + (1 - \y) * 16;
             \byte = {#1}[\i];
           }
-          \node[draw,minimum width=1cm,minimum height=1cm,anchor=south west] at (\x, \y) {\ALT{}{\byte}};
+          \node[draw,minimum width=1cm,minimum height=1cm,anchor=south west,font=\solfont] at (\x, \y) {\ALT{}{\byte}};
         }
       }
 
       \draw[|-|] (0,2.2) -- (8,2.2);
-      \node[anchor=base,yshift=2mm] at (4,2.2) {\sc\tiny bestandsnaam};
+      \node[anchor=base,yshift=2mm,font=\scshape\tiny] at (4,2.2) {bestandsnaam};
 
       \draw[|-|] (8,2.2) -- (11,2.2);
-      \node[anchor=base,yshift=2mm] at (9.5,2.2) {\sc\tiny extensie};
+      \node[anchor=base,yshift=2mm,font=\scshape\tiny] at (9.5,2.2) {extensie};
 
       \draw[|-|] (11,2.2) -- (12,2.2);
-      \node[anchor=base,yshift=2mm] at (11.5,2.2) {\sc\tiny attributen};
+      \node[anchor=base,yshift=2mm,font=\scshape\tiny] at (11.5,2.2) {attributen};
 
       \draw[|-|] (6,-0.2) -- (8,-0.2);
-      \node[anchor=base,yshift=-3mm] at (7,-0.2) {\sc\tiny \parbox{2cm}{\centering tijd laatste write}};
+      \node[anchor=base,yshift=-3mm,font=\scshape\tiny] at (7,-0.2) {\parbox{2cm}{\centering tijd laatste write}};
 
       \draw[|-|] (8,-0.2) -- (10,-0.2);
-      \node[anchor=base,yshift=-3mm] at (9,-0.2) {\sc\tiny \parbox{2cm}{\centering datum laatste write}};
+      \node[anchor=base,yshift=-3mm,font=\scshape\tiny] at (9,-0.2) {\parbox{2cm}{\centering datum laatste write}};
 
       \draw[|-|] (10,-0.2) -- (12,-0.2);
-      \node[anchor=base,yshift=-3mm] at (11,-0.2) {\sc\tiny startcluster};
+      \node[anchor=base,yshift=-3mm,font=\scshape\tiny] at (11,-0.2) {startcluster};
 
       \draw[|-|] (12,-0.2) -- (16,-0.2);
-      \node[anchor=base,yshift=-3mm] at (14,-0.2) {\sc\tiny grootte};
+      \node[anchor=base,yshift=-3mm,font=\scshape\tiny] at (14,-0.2) {grootte};
     \end{tikzpicture}
   \end{center}
 }
@@ -356,17 +358,17 @@
     \begin{tikzpicture}
       \foreach[count=\i] \bit in {#1} {
         \pgfmathparse{\i*.8}\let\x\pgfmathresult
-        \node[draw,minimum width=8mm,minimum height=8mm] (bit \i) at (\x,0) {\ALT{}{\bit}};
+        \node[draw,minimum width=8mm,minimum height=8mm] (bit \i) at (\x,0) {\ALT{}{\solfont\bit}};
       }
 
       \draw[|-|] ($ (bit 1.north west) + (0,.25) $) -- ($ (bit 5.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {hours};
+                 node[midway,above,font={\scshape\tiny}] {hours};
 
       \draw[|-|] ($ (bit 6.north west) + (0,.25) $) -- ($ (bit 11.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {minutes};
+                 node[midway,above,font={\scshape\tiny}] {minutes};
 
       \draw[|-|] ($ (bit 12.north west) + (0,.25) $) -- ($ (bit 16.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {seconds/2};
+                 node[midway,above,font={\scshape\tiny}] {seconds/2};
     \end{tikzpicture}
   \end{center}
 }
@@ -376,17 +378,17 @@
     \begin{tikzpicture}
       \foreach[count=\i] \bit in {#1} {
         \pgfmathparse{\i*.8}\let\x\pgfmathresult
-        \node[draw,minimum width=8mm,minimum height=8mm] (bit \i) at (\x,0) {\ALT{}{\bit}};
+        \node[draw,minimum width=8mm,minimum height=8mm] (bit \i) at (\x,0) {\ALT{}{\solfont\bit}};
       }
 
       \draw[|-|] ($ (bit 1.north west) + (0,.25) $) -- ($ (bit 7.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {year-1980};
+                 node[midway,above,font={\scshape\tiny}] {year-1980};
 
       \draw[|-|] ($ (bit 8.north west) + (0,.25) $) -- ($ (bit 11.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {month};
+                 node[midway,above,font={\scshape\tiny}] {month};
 
       \draw[|-|] ($ (bit 12.north west) + (0,.25) $) -- ($ (bit 16.north east) + (0,.25) $)
-                 node[midway,above,font={\sc\tiny}] {day};
+                 node[midway,above,font={\scshape\tiny}] {day};
     \end{tikzpicture}
   \end{center}
 }
@@ -450,12 +452,12 @@
     \begin{tikzpicture}
       \draw (0,0) grid (16,-2);
 
-      \draw[|-|,yshift=2mm] (11,0) -- ++(2,0) node[midway,above,font=\tiny] {bytes/sector};
-      \draw[|-|,yshift=2mm] (13,0) -- ++(1,0) node[midway,above,font=\tiny] {sectors/cluster};
-      \draw[|-|,yshift=-2mm] (0,-2) -- ++(1,0) node[midway,below,font=\tiny] {\#FATs};
-      \draw[|-|,yshift=-2mm] (1,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#root entries};
-      \draw[|-|,yshift=-2mm] (3,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#sectors};
-      \draw[|-|,yshift=-2mm] (6,-2) -- ++(2,0) node[midway,below,font=\tiny] {\#sectors/FAT};
+      \draw[|-|,yshift=2mm] (11,0) -- ++(2,0) node[midway,above,font=\tiny\scshape] {\parbox{1cm}{bytes / sector}};
+      \draw[|-|,yshift=2mm] (13,0) -- ++(1,0) node[midway,above,font=\tiny\scshape] {\parbox{1cm}{sectors / cluster}};
+      \draw[|-|,yshift=-2mm] (0,-2) -- ++(1,0) node[midway,below,font=\tiny\scshape] {\#fats};
+      \draw[|-|,yshift=-2mm] (1,-2) -- ++(2,0) node[midway,below,font=\tiny\scshape] {\#root entries};
+      \draw[|-|,yshift=-2mm] (3,-2) -- ++(2,0) node[midway,below,font=\tiny\scshape] {\#sectors};
+      \draw[|-|,yshift=-2mm] (6,-2) -- ++(2,0) node[midway,below,font=\tiny\scshape] {\#sectors/fat};
     \end{tikzpicture}
   \end{center}
 }

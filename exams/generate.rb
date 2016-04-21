@@ -3,11 +3,12 @@ require 'Java'
 require 'Upload'
 require 'Template'
 require 'pathname'
-require 'nokogiri'
+require 'rexml/document'
 
 
 class Context
   include Contracts::TypeChecking
+  include REXML
 
   def initialize(name)
     @name = name
@@ -19,7 +20,8 @@ class Context
 
   def load_image(image)
     raw_xml_data = Java.run_jar( Pathname.new('../image-reader/image-reader.jar'), image )
-    Nokogiri::XML(raw_xml_data)
+    
+    Document.new raw_xml_data
   end
 
   def xml_file
@@ -31,11 +33,11 @@ class Context
   end
   
   def lookup(xpath)
-    node = disk.at_xpath(xpath)
+    element = XPath.first(disk, xpath)
 
-    raise "Could not find #{xpath}" unless node
+    raise "Could not find #{xpath}" unless element
 
-    node.content
+    element.text
   end
     
   def image
@@ -149,16 +151,16 @@ def main
     template_path = Pathname.new "img.template"
     tex_filename = image_path.sub_ext('.tex').to_s
 
-    begin
+    # begin
 
       data = Template.generate(template_path.read, Context.new(name))
 
       File.open(tex_filename, 'w') do |out|
         out.write data
       end
-    rescue
-      puts "Failed on #{img}"
-    end
+    # rescue StandardError => e
+    #   puts "Failed on #{img}\n#{e.to_s}"
+    # end
   end
 end
 
