@@ -1,3 +1,5 @@
+# Generates .tex based on .img
+
 require 'LaTeX'
 require 'Java'
 require 'Upload'
