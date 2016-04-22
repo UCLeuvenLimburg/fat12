@@ -109,7 +109,7 @@
     Datum: & \exam@datum &  \\
     Beginuur: & \exam@beginuur & \\
     Tijdsduur: & \exam@duur  & \\ \\
-    Student: & \multicolumn{2}{l}{\parbox{5cm}{\dotfill} \hspace{1mm} Nummer: \parbox{2cm}{\dotfill} \hspace{1mm} Reeks: \parbox{1cm}{\dotfill}}
+    Student: & \multicolumn{2}{l}{\parbox{10cm}{\dotfill} \hspace{1mm} \hspace{1mm} Reeks: \parbox{1cm}{\dotfill}}
   \end{tabular}%
 }
 
@@ -409,22 +409,22 @@
 
       \begin{scope}[xshift=4.4cm]
         \node[box] at (0,0) {\Huge X};
-        \node[box] at (1,0) {\Huge Y};
+        \node[box] (node1) at (1,0) {\Huge Y};
       \end{scope}
 
-      \begin{scope}[xshift=0cm,yshift=-2cm]
-        \node[box] at (0,0) {\Huge A};
+      \begin{scope}[xshift=9cm]
+        \node[box] (node2) at (0,0) {\Huge A};
         \node[box] at (1,0) {\Huge B};
         \node[box] at (2,0) {\Huge C};
       \end{scope}
 
-      \begin{scope}[xshift=3.4cm,yshift=-2cm]
+      \begin{scope}[xshift=9cm,xshift=3.4cm]
         \node[box] at (0,0) {\Huge X};
         \node[box] at (1,0) {\Huge Y};
         \node[box] at (2,0) {\Huge Z};
       \end{scope}
 
-      \draw[->,thick] (3.2,-0.1) -- +(0,-.75);
+      \draw[->,thick] ($ (node1.east) + (0.5,0) $) -- ($ (node2.west) - (0.5,0) $);
     \end{tikzpicture}
   \end{center}
 }
@@ -433,7 +433,7 @@
   \begin{center}
     \begin{tikzpicture}
       \begin{scope}[rotate=90,transform shape]
-        \node[minimum width=3cm,minimum height=1cm,draw] (boot) at (0,0) {boot sector};
+        \node[minimum width=3cm,minimum height=1cm,draw,inner sep=0mm] (boot) at (0,0) {\parbox{3cm}{\centering boot sector \\ (512 bytes)}};
         \node[minimum width=3cm,minimum height=1cm,draw,anchor=north] (fat-1) at ($ (boot.south) + (0,-.1) $) {FAT1};
         \node[minimum width=3cm,minimum height=1cm,draw,anchor=north] (fat-2) at ($ (fat-1.south) + (0,-.1) $) {FAT2};
         \node[minimum width=3cm,minimum height=1cm,draw,anchor=north] (fat-dots) at ($ (fat-2.south) + (0,-.1) $) {\vdots};

@@ -48,10 +48,10 @@
 
 %\vskip1cm
 \vfil
-Noteer hieronder de boot sector bytes (hexadecimaal):
+\noindent \textbf{Noteer hieronder de boot sector bytes (hexadecimaal).}
 \bootsectorform
 \vskip1cm
-Interpreteer deze bytes:
+\noindent \textbf{Interpreteer deze bytes.}
 {
   \newcommand{\entry}[2]{#1 & \ALT{\rule{2.5cm}{.25pt}}{\hspace{2mm}\solfont #2}}
   \begin{center}
@@ -78,21 +78,21 @@ Interpreteer deze bytes:
 
 \normalpagegeometry
 
-\noindent Zoek de entry op van de directory \texttt{<%= dir %>}
-in de root. Vul in (hexadecimaal):
+\noindent \textbf{Zoek de entry op van de directory \texttt{<%= dir %>}
+in de root. Vul in (hexadecimaal):}
 
 \directoryentryform{<%= dir_bytes %>}
 
-\noindent Zoek in deze directory naar \texttt{<%= file %>} en vervolledig onderstaand rooster (hexadecimaal).
+\noindent \textbf{Zoek in deze directory naar \texttt{<%= file %>} en vervolledig onderstaand rooster (hexadecimaal).}
 
 \directoryentryform{<%= file_bytes %>}
 
-\noindent Zet de tijd en datum van de last write van het bestand om naar binair:
+\noindent \textbf{Zet de tijd en datum van de last write van het bestand om naar binair.}
 \timeform{<%= file_time_bits %>}
 \dateform{<%= file_date_bits %>}
 
 
-\noindent Interpreteer deze bits:
+\noindent \textbf{Interpreteer deze bits.}
 {
   \newcommand{\entry}[2]{#1 & \ALT{\rule{5cm}{.25pt}}{\hspace{2cm}\solfont #2} \\[.5cm]}
   \begin{center}
@@ -104,12 +104,12 @@ in de root. Vul in (hexadecimaal):
 }
 
 
-\noindent De inhoud van het bestand is verspreid over meerdere clusters; noteer hun logische indices in volgorde:
+\noindent \textbf{De inhoud van het bestand is verspreid over meerdere clusters; noteer hun logische indices in volgorde:}
 \vskip1cm
 \begin{center}
-  \ALT{\rule{8cm}{.25pt}}{\solfont <%= file_clusters %>} \parbox{0mm}{(decimaal)}
+  \ALT{\rule{10cm}{.25pt}}{\solfont <%= file_clusters %>} \parbox{0mm}{(decimaal)}
 \end{center}
-
-
+\vfil
+\fatstructure
 
 \end{document}
